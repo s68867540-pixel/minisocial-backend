@@ -1,33 +1,50 @@
 // ===== Dependencies =====
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 const { Server } = require("socket.io");
 
 // ===== App & Server Setup =====
 const app = express();
 const server = http.createServer(app);
 
-// ===== CORS Setup =====
+// ===== Config =====
 const FRONTEND_URL = "https://minniisocialsitee.netlify.app";
-
-app.use(cors({
-  origin: FRONTEND_URL,
-  methods: ["GET", "POST"],
-  credentials: true
-}));
+const PORT = process.env.PORT || 3000;
+const UPLOAD_DIR = path.join(__dirname, "uploads");
 
 // ===== Middleware =====
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log("Incoming request:", req.method, req.url);
+  next();
+});
+
+// Trim URLs to remove trailing spaces/newlines
+app.use((req, res, next) => {
+  req.url = req.url.trim();
+  next();
+});
+
+// CORS
+app.use(cors({
+  origin: FRONTEND_URL,
+  methods: ["GET", "POST", "OPTIONS"],
+  credentials: true
+}));
+app.options("*", cors());
+
+// Parse JSON
 app.use(express.json());
 
 // ===== Socket.io Setup =====
 const io = new Server(server, {
   cors: {
     origin: FRONTEND_URL,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "OPTIONS"],
     credentials: true
   }
 });
@@ -44,24 +61,27 @@ io.on("connection", (socket) => {
   });
 });
 
-// ===== File Upload Setup =====
-const uploadDir = path.join(__dirname, "uploads");
-
-// Ensure uploads folder exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// ===== Ensure Upload Folder Exists =====
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
+// ===== Multer Setup =====
 const storage = multer.diskStorage({
-  destination: uploadDir,
+  destination: UPLOAD_DIR,
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   }
 });
-
 const upload = multer({ storage });
 
-// ===== File Upload Route =====
+// ===== Routes =====
+// Test route
+app.get("/", (req, res) => {
+  res.send("Server is running!");
+});
+
+// File upload
 app.post("/upload", upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
@@ -74,11 +94,9 @@ app.post("/upload", upload.single("file"), (req, res) => {
 });
 
 // Serve uploaded files
-app.use("/uploads", express.static(uploadDir));
+app.use("/uploads", express.static(UPLOAD_DIR));
 
 // ===== Start Server =====
-const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
