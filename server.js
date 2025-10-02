@@ -4,6 +4,7 @@ const http = require("http");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 const { Server } = require("socket.io");
 
 // ===== App & Server Setup =====
@@ -19,7 +20,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Handle preflight requests for all routes
 app.options("*", cors({
   origin: FRONTEND_URL,
   methods: ["GET", "POST", "OPTIONS"],
@@ -51,9 +51,9 @@ io.on("connection", (socket) => {
 });
 
 // ===== File Upload Setup =====
-const uploaDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploaDir)) {
-  fs.mkdirSync(uploaDir, { recursive: true });
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -63,7 +63,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer ({ storage });
+const upload = multer({ storage });
 
 // ===== File Upload Route =====
 app.post("/upload", upload.single("file"), (req, res) => {
