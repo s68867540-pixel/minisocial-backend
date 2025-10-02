@@ -16,13 +16,7 @@ const FRONTEND_URL = "https://minniisocialsitee.netlify.app";
 
 app.use(cors({
   origin: FRONTEND_URL,
-  methods: ["GET", "POST", "OPTIONS"],
-  credentials: true
-}));
-
-app.options("*", cors({
-  origin: FRONTEND_URL,
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST"],
   credentials: true
 }));
 
@@ -33,7 +27,7 @@ app.use(express.json());
 const io = new Server(server, {
   cors: {
     origin: FRONTEND_URL,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST"],
     credentials: true
   }
 });
@@ -52,6 +46,8 @@ io.on("connection", (socket) => {
 
 // ===== File Upload Setup =====
 const uploadDir = path.join(__dirname, "uploads");
+
+// Ensure uploads folder exists
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -78,10 +74,11 @@ app.post("/upload", upload.single("file"), (req, res) => {
 });
 
 // Serve uploaded files
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(uploadDir));
 
 // ===== Start Server =====
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
