@@ -77,8 +77,8 @@ const upload = multer({ storage });
 
 // ===== Routes =====
 // Test route
-app.get("/", (req, res) => {
-  res.send("Server is running!");
+app.get("/test", (req, res) => {
+  res.json("Test is running!");
 });
 
 // File upload
@@ -102,6 +102,8 @@ server.listen(PORT, () => {
 });
 
 app.get("/test", (req, res) => {
-  res.send("Server is running!");
+  res.json("test is running!");
 });
+
+
 
